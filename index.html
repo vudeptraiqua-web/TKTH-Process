@@ -87,10 +87,6 @@
         <div class="p-2 border-b border-slate-800 bg-slate-900/50">
           <select id="categoryFilter" onchange="filterCategory()" class="w-full text-xs font-semibold bg-slate-800 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none">
             <option value="ALL">Tất cả danh mục</option>
-            <option value="Bán hàng">Bán hàng & Siêu thị</option>
-            <option value="Nhân sự">Nhân sự & Tuyển dụng</option>
-            <option value="Vận hành">Vận hành & Kho bãi</option>
-            <option value="Kỹ thuật">Kỹ thuật & CNTT</option>
           </select>
         </div>
 
@@ -153,26 +149,39 @@
       <form id="processForm" onsubmit="saveProcess(event)" class="p-6 overflow-y-auto space-y-4 flex-1">
         <input type="hidden" id="processId">
         <div><label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tiêu đề quy trình *</label><input type="text" id="formTitle" required class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:outline-none"></div>
+        
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Danh mục *</label>
-            <select id="formCategory" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:outline-none">
-              <option value="Bán hàng">Bán hàng & Siêu thị</option>
-              <option value="Nhân sự">Nhân sự & Tuyển dụng</option>
-              <option value="Vận hành">Vận hành & Kho bãi</option>
-              <option value="Kỹ thuật">Kỹ thuật & CNTT</option>
+            <div class="flex justify-between items-center mb-1">
+              <label class="block text-xs font-bold text-slate-700 uppercase">Danh mục *</label>
+              <div class="flex gap-2">
+                <button type="button" onclick="addNewCategory()" class="text-[11px] text-amber-700 hover:underline font-bold">+ Thêm DM</button>
+                <button type="button" onclick="deleteCurrentCategory()" class="text-[11px] text-red-600 hover:underline font-bold">- Xóa DM</button>
+              </div>
+            </div>
+            <select id="formCategory" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:outline-none bg-white">
             </select>
           </div>
           <div><label class="block text-xs font-bold text-slate-700 uppercase mb-1">Bộ phận phụ trách</label><input type="text" id="formOwner" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:outline-none"></div>
         </div>
+
         <div><label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mô tả quy trình</label><textarea id="formDescription" rows="2" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:outline-none"></textarea></div>
+        
         <div>
           <div class="flex justify-between items-center mb-2">
             <label class="block text-xs font-bold text-slate-700 uppercase">Các bước thực hiện</label>
-            <button type="button" onclick="addStepField()" class="text-xs font-bold text-amber-700 flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Thêm bước</button>
+            <div class="flex gap-2">
+              <button type="button" onclick="autoAssignAllIcons()" class="text-xs font-bold bg-amber-100 text-amber-800 hover:bg-amber-200 px-2.5 py-1 rounded-md flex items-center gap-1 transition-all">
+                <i data-lucide="wand-2" class="w-3.5 h-3.5"></i> Tự động gán Icon
+              </button>
+              <button type="button" onclick="addStepField()" class="text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 px-2.5 py-1 rounded-md flex items-center gap-1 transition-all">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Thêm bước
+              </button>
+            </div>
           </div>
           <div id="stepsContainer" class="space-y-3"></div>
         </div>
+
         <div class="pt-4 border-t border-slate-200 flex justify-end space-x-3">
           <button type="button" onclick="closeModal()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg">Hủy</button>
           <button type="submit" class="px-5 py-2 text-xs font-bold bg-amber-400 text-slate-900 hover:bg-amber-500 rounded-lg shadow">Lưu Quy Trình</button>
@@ -182,7 +191,6 @@
   </div>
 
   <script>
-    // ĐÃ THAY CẤU HÌNH FIREBASE CỦA BẠN VÀO ĐÂY
     const firebaseConfig = {
       apiKey: "AIzaSyAEtKo9NAV9Ny3GwqWHttQ3CdOUd5x1LwE",
       authDomain: "tkth-process.firebaseapp.com",
@@ -197,10 +205,14 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const processesRef = db.ref('processes');
+    const categoriesRef = db.ref('categories');
 
     const DEFAULT_PASS = "311426";
     let adminPassword = localStorage.getItem('tgdd_admin_pass') || DEFAULT_PASS;
     let isAdmin = false;
+
+    let defaultCategories = ["Bán hàng", "Nhân sự", "Vận hành", "Kỹ thuật"];
+    let categories = [...defaultCategories];
 
     const colorBlocks = [
       { bg: 'bg-blue-600', badge: 'bg-blue-800 text-blue-100', text: 'text-white', subtext: 'text-blue-100' },
@@ -210,7 +222,21 @@
       { bg: 'bg-rose-600', badge: 'bg-rose-800 text-rose-100', text: 'text-white', subtext: 'text-rose-100' }
     ];
 
-    const iconList = ['user-check', 'search', 'cpu', 'file-check', 'user-plus', 'briefcase', 'book-open', 'award', 'settings', 'check-circle'];
+    const availableIcons = [
+      'user-check', 'search', 'cpu', 'file-check', 'user-plus', 'briefcase', 
+      'book-open', 'award', 'settings', 'check-circle', 'phone-call', 'shopping-cart', 
+      'truck', 'shield-check', 'wrench', 'help-circle', 'box', 'credit-card', 'mail'
+    ];
+
+    const autoIconRules = [
+      { keywords: ['tiếp nhận', 'khách hàng', 'tư vấn', 'gặp', 'chào'], icon: 'user-check' },
+      { keywords: ['kiểm tra', 'soát', 'tìm', 'đánh giá', 'xem'], icon: 'search' },
+      { keywords: ['kỹ thuật', 'sửa', 'máy', 'phần cứng', 'thiết bị', 'xử lý'], icon: 'cpu' },
+      { keywords: ['xác nhận', 'hóa đơn', 'phiếu', 'ký', 'giấy tờ', 'hoàn tất'], icon: 'file-check' },
+      { keywords: ['bán', 'thanh toán', 'tiền', 'giá'], icon: 'credit-card' },
+      { keywords: ['kho', 'giao', 'vận chuyển', 'nhập'], icon: 'truck' },
+      { keywords: ['bảo hành', 'an toàn', 'bảo mật'], icon: 'shield-check' }
+    ];
 
     const defaultData = [
       {
@@ -232,6 +258,16 @@
     let currentProcessId = null;
     let currentViewMode = 'infographic';
 
+    categoriesRef.on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        categories = Array.isArray(data) ? data : Object.values(data);
+      } else {
+        categoriesRef.set(defaultCategories);
+      }
+      renderCategoryOptions();
+    });
+
     processesRef.on('value', (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -245,6 +281,46 @@
       renderSidebar();
       if (currentProcessId) renderContent(currentProcessId);
     });
+
+    function renderCategoryOptions() {
+      const filterSelect = document.getElementById('categoryFilter');
+      const formSelect = document.getElementById('formCategory');
+
+      const currentFilterVal = filterSelect.value;
+      const currentFormVal = formSelect.value;
+
+      filterSelect.innerHTML = `<option value="ALL">Tất cả danh mục</option>` + 
+        categories.map(c => `<option value="${c}">${c}</option>`).join('');
+      
+      formSelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+
+      filterSelect.value = currentFilterVal || "ALL";
+      if (currentFormVal && categories.includes(currentFormVal)) formSelect.value = currentFormVal;
+    }
+
+    function addNewCategory() {
+      if(!isAdmin) return;
+      const newCat = prompt("Nhập tên danh mục mới:");
+      if (newCat && newCat.trim() !== '') {
+        const trimmed = newCat.trim();
+        if (!categories.includes(trimmed)) {
+          categories.push(trimmed);
+          categoriesRef.set(categories);
+        }
+      }
+    }
+
+    function deleteCurrentCategory() {
+      if(!isAdmin) return;
+      const formSelect = document.getElementById('formCategory');
+      const catToDelete = formSelect.value;
+
+      if (!catToDelete) return;
+      if (confirm(`Bạn có chắc muốn xóa danh mục "${catToDelete}"?`)) {
+        categories = categories.filter(c => c !== catToDelete);
+        categoriesRef.set(categories);
+      }
+    }
 
     function handleAuthAction() {
       if (isAdmin) {
@@ -401,6 +477,14 @@
       renderContent(currentProcessId);
     }
 
+    function renderIconElement(iconValue) {
+      if (!iconValue) return `<i data-lucide="check-circle" class="w-6 h-6"></i>`;
+      if (iconValue.startsWith('http://') || iconValue.startsWith('https://')) {
+        return `<img src="${iconValue}" alt="icon" class="w-6 h-6 object-contain">`;
+      }
+      return `<i data-lucide="${iconValue}" class="w-6 h-6"></i>`;
+    }
+
     function renderInfographicView(steps) {
       if(!steps || steps.length === 0) return `<p class="text-slate-400 text-xs">Chưa có các bước trong quy trình này.</p>`;
 
@@ -414,7 +498,7 @@
                   <div class="flex items-center gap-3 shrink-0">
                     <span class="${block.badge} font-black text-xs px-3 py-1.5 rounded-xl uppercase tracking-wider shadow-inner">Bước ${idx + 1}</span>
                     <div class="w-12 h-12 rounded-xl bg-black/15 flex items-center justify-center shrink-0">
-                      <i data-lucide="${step.icon || 'check-circle'}" class="w-6 h-6"></i>
+                      ${renderIconElement(step.icon)}
                     </div>
                   </div>
                   <div class="flex-1 min-w-0">
@@ -485,24 +569,75 @@
 
     function closeModal() { document.getElementById('processModal').classList.add('hidden'); }
 
+    function updateIconPreview(container) {
+      const select = container.querySelector('.step-icon-select');
+      const customUrl = container.querySelector('.step-custom-url').value.trim();
+      const preview = container.querySelector('.icon-preview');
+
+      if (customUrl !== '') {
+        preview.innerHTML = `<img src="${customUrl}" alt="icon" class="w-4 h-4 object-contain" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2748/2748558.png'">`;
+      } else {
+        preview.innerHTML = `<i data-lucide="${select.value}" class="w-4 h-4"></i>`;
+        lucide.createIcons();
+      }
+    }
+
     function addStepField(title = '', desc = '', icon = 'check-circle') {
       const container = document.getElementById('stepsContainer');
       const div = document.createElement('div');
-      div.className = 'flex gap-2 items-start bg-slate-50 p-2.5 rounded-lg border border-slate-200 step-item';
+      div.className = 'bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-2 step-item';
+
+      const isUrl = icon.startsWith('http://') || icon.startsWith('https://');
+      const selectIconVal = isUrl ? 'check-circle' : icon;
+      const customUrlVal = isUrl ? icon : '';
+
       div.innerHTML = `
-        <div class="flex-1 space-y-1.5">
-          <div class="flex gap-2">
-            <input type="text" placeholder="Tên bước..." value="${title}" class="step-title flex-1 text-xs font-bold p-1.5 border border-slate-300 rounded focus:outline-none">
-            <select class="step-icon text-xs p-1.5 border border-slate-300 rounded bg-white">
-              ${iconList.map(i => `<option value="${i}" ${i === icon ? 'selected' : ''}>Icon: ${i}</option>`).join('')}
+        <div class="flex gap-2 items-center">
+          <input type="text" placeholder="Tên bước thực hiện..." value="${title}" class="step-title flex-1 text-xs font-bold p-2 border border-slate-300 rounded focus:outline-none">
+          
+          <div class="flex items-center gap-1.5 bg-white border border-slate-300 rounded p-1">
+            <div class="icon-preview w-6 h-6 rounded bg-slate-100 flex items-center justify-center text-slate-700 shrink-0"></div>
+            <select class="step-icon-select text-xs p-1 border-0 bg-transparent focus:outline-none" onchange="updateIconPreview(this.closest('.step-item'))">
+              ${availableIcons.map(i => `<option value="${i}" ${i === selectIconVal ? 'selected' : ''}>${i}</option>`).join('')}
             </select>
           </div>
-          <textarea placeholder="Mô tả công việc chi tiết..." rows="2" class="step-desc w-full text-xs p-1.5 border border-slate-300 rounded focus:outline-none">${desc}</textarea>
+
+          <button type="button" onclick="this.closest('.step-item').remove()" class="text-slate-400 hover:text-red-500 p-1 shrink-0"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
         </div>
-        <button type="button" onclick="this.parentElement.remove()" class="text-slate-400 hover:text-red-500 p-1"><i data-lucide="trash" class="w-4 h-4"></i></button>
+
+        <div class="flex gap-2 items-center">
+          <textarea placeholder="Mô tả công việc chi tiết..." rows="2" class="step-desc flex-1 text-xs p-2 border border-slate-300 rounded focus:outline-none">${desc}</textarea>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] font-bold text-slate-500 uppercase shrink-0">Hoặc URL Icon web:</span>
+          <input type="url" placeholder="https://domain.com/icon.png (Tùy chọn)" value="${customUrlVal}" oninput="updateIconPreview(this.closest('.step-item'))" class="step-custom-url text-xs p-1.5 border border-slate-200 rounded flex-1 focus:outline-none bg-white">
+        </div>
       `;
+
       container.appendChild(div);
-      lucide.createIcons();
+      updateIconPreview(div);
+    }
+
+    function autoAssignAllIcons() {
+      const items = document.querySelectorAll('.step-item');
+      items.forEach(item => {
+        const title = item.querySelector('.step-title').value.toLowerCase();
+        const desc = item.querySelector('.step-desc').value.toLowerCase();
+        const combinedText = title + ' ' + desc;
+
+        let matchedIcon = 'check-circle';
+        for (const rule of autoIconRules) {
+          if (rule.keywords.some(k => combinedText.includes(k))) {
+            matchedIcon = rule.icon;
+            break;
+          }
+        }
+
+        item.querySelector('.step-icon-select').value = matchedIcon;
+        item.querySelector('.step-custom-url').value = '';
+        updateIconPreview(item);
+      });
     }
 
     function saveProcess(e) {
@@ -516,11 +651,18 @@
       const description = document.getElementById('formDescription').value;
 
       const stepElements = document.querySelectorAll('.step-item');
-      const steps = Array.from(stepElements).map(el => ({
-        title: el.querySelector('.step-title').value || 'Bước thực hiện',
-        desc: el.querySelector('.step-desc').value || '',
-        icon: el.querySelector('.step-icon').value || 'check-circle'
-      }));
+      const steps = Array.from(stepElements).map(el => {
+        const title = el.querySelector('.step-title').value || 'Bước thực hiện';
+        const desc = el.querySelector('.step-desc').value || '';
+        const customUrl = el.querySelector('.step-custom-url').value.trim();
+        const iconSelect = el.querySelector('.step-icon-select').value;
+
+        return {
+          title,
+          desc,
+          icon: customUrl !== '' ? customUrl : iconSelect
+        };
+      });
 
       const processData = { title, category, owner, description, steps };
 
