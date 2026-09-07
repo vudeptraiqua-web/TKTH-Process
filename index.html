@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thế Giới Di Động - Bộ Phận Triển Khai Tổng Hợp</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Firebase SDK v9 (Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .tgdd-bg { background-color: #ffd400; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col">
+
+  <!-- HEADER -->
+  <header class="tgdd-bg text-black sticky top-0 z-30 shadow-md border-b border-amber-300">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <div class="flex items-center space-x-3 sm:space-x-4">
+        <a href="#" class="flex items-center space-x-2 shrink-0">
+          <div class="w-10 h-10 bg-black rounded-full flex items-center justify-center p-1.5 shadow shrink-0">
+            <svg viewBox="0 0 100 100" class="w-full h-full text-[#ffd400] fill-current">
+              <circle cx="53" cy="22" r="9" />
+              <rect x="42" y="34" width="8" height="8" /><rect x="51" y="34" width="8" height="8" /><rect x="60" y="34" width="8" height="8" /><rect x="70" y="27" width="8" height="8" />
+              <rect x="33" y="43" width="8" height="8" /><rect x="42" y="43" width="8" height="8" /><rect x="51" y="43" width="8" height="8" /><rect x="24" y="52" width="8" height="8" />
+              <rect x="41" y="52" width="8" height="8" /><rect x="52" y="61" width="8" height="8" /><rect x="61" y="61" width="8" height="8" /><rect x="31" y="68" width="8" height="8" />
+              <rect x="59" y="70" width="8" height="8" /><rect x="22" y="77" width="8" height="8" />
+            </svg>
+          </div>
+          <span class="font-black italic text-lg sm:text-xl tracking-tighter text-black">thegioididong<span class="text-xs not-italic font-bold ml-0.5">.com</span></span>
+        </a>
+
+        <div class="h-7 w-px bg-black/20"></div>
+        <div class="flex flex-col justify-center">
+          <span class="font-black text-xs sm:text-sm uppercase tracking-wider text-black leading-tight">
+            BỘ PHẬN TRIỂN KHAI TỔNG HỢP
+          </span>
+          <span class="text-[10px] font-bold text-black/70 hidden sm:inline-block">Hệ Thống Quy Trình & Hướng Dẫn Vận Hành</span>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <button onclick="openModal()" id="addProcessBtn" class="bg-black text-[#ffd400] hover:bg-slate-900 font-bold text-xs sm:text-sm px-3.5 py-2 rounded-lg items-center gap-1.5 shadow hidden">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>Thêm Quy Trình</span>
+        </button>
+
+        <button onclick="openChangePasswordModal()" id="changePasswordBtn" class="bg-black/10 hover:bg-black/20 text-black font-bold text-xs sm:text-sm px-3 py-2 rounded-lg items-center gap-1 hidden">
+          <i data-lucide="key-round" class="w-4 h-4"></i>
+          <span class="hidden md:inline">Đổi MK</span>
+        </button>
+
+        <button onclick="handleAuthAction()" id="authBtn" class="bg-black text-[#ffd400] hover:bg-slate-900 font-bold text-xs px-3 py-2 rounded-lg flex items-center gap-1.5 transition-all shadow">
+          <i data-lucide="lock" class="w-4 h-4"></i>
+          <span id="authLabel">Đăng nhập Admin</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full flex flex-col md:flex-row gap-6">
+    <aside class="w-full md:w-80 shrink-0 space-y-4">
+      <div class="bg-slate-900 p-3 rounded-xl shadow-md border border-slate-800">
+        <div class="relative">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
+          <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Tìm theo tiêu đề, nội dung..." class="w-full pl-9 pr-3 py-2 text-xs bg-slate-800 text-white placeholder-slate-400 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400">
+        </div>
+      </div>
+
+      <div class="bg-slate-900 rounded-xl shadow-md border border-slate-800 overflow-hidden text-white">
+        <div class="p-3 bg-slate-950 border-b border-slate-800 flex justify-between items-center">
+          <h2 class="font-bold text-xs uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+            <i data-lucide="book-open" class="w-4 h-4 text-amber-400"></i>
+            Mục Lục Quy Trình
+          </h2>
+          <span id="processCount" class="text-xs bg-amber-400 text-slate-950 font-black px-2 py-0.5 rounded-full">0</span>
+        </div>
+
+        <div class="p-2 border-b border-slate-800 bg-slate-900/50">
+          <select id="categoryFilter" onchange="filterCategory()" class="w-full text-xs font-semibold bg-slate-800 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none">
+            <option value="ALL">Tất cả danh mục</option>
+            <option value="Bán hàng">Bán hàng & Siêu thị</option>
+            <option value="Nhân sự">Nhân sự & Tuyển dụng</option>
+            <option value="Vận hành">Vận hành & Kho bãi</option>
+            <option value="Kỹ thuật">Kỹ thuật & CNTT</option>
+          </select>
+        </div>
+
+        <nav id="processList" class="p-2 max-h-[calc(100vh-320px)] overflow-y-auto space-y-1"></nav>
+      </div>
+    </aside>
+
+    <main class="flex-1 min-w-0">
+      <div id="contentArea" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[500px]"></div>
+    </main>
+  </div>
+
+  <!-- MODALS -->
+  <div id="loginModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+      <div class="tgdd-bg p-4 border-b border-amber-300 flex justify-between items-center">
+        <h3 class="font-bold text-slate-900 flex items-center gap-2"><i data-lucide="shield-check" class="w-5 h-5"></i> Xác Thực Quyền Admin</h3>
+        <button onclick="closeLoginModal()" class="text-slate-800 hover:text-black p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form onsubmit="submitLogin(event)" class="p-6 space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mật khẩu Admin</label>
+          <input type="password" id="loginPassword" required placeholder="Nhập mật khẩu..." class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:outline-none">
+          <p id="loginError" class="text-red-500 text-xs mt-1 hidden">Mật khẩu không chính xác!</p>
+        </div>
+        <div class="flex justify-end space-x-2 pt-2">
+          <button type="button" onclick="closeLoginModal()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg">Hủy</button>
+          <button type="submit" class="px-4 py-2 text-xs font-bold bg-amber-400 text-slate-900 hover:bg-amber-500 rounded-lg shadow">Đăng Nhập</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="changePasswordModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+      <div class="tgdd-bg p-4 border-b border-amber-300 flex justify-between items-center">
+        <h3 class="font-bold text-slate-900 flex items-center gap-2"><i data-lucide="key-round" class="w-5 h-5"></i> Thay Đổi Mật Khẩu Admin</h3>
+        <button onclick="closeChangePasswordModal()" class="text-slate-800 hover:text-black p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form onsubmit="submitChangePassword(event)" class="p-6 space-y-3">
+        <div><label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mật khẩu hiện tại</label><input type="password" id="currentPass" required class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:outline-none"></div>
+        <div><label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mật khẩu mới</label><input type="password" id="newPass" required class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:outline-none"></div>
+        <div><label class="block text-xs font-bold text-slate-700 uppercase mb-1">Xác nhận mật khẩu mới</label><input type="password" id="confirmPass" required class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:outline-none"></div>
+        <p id="changePassError" class="text-red-500 text-xs hidden"></p>
+        <div class="flex justify-end space-x-2 pt-2">
+          <button type="button" onclick="closeChangePasswordModal()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg">Hủy</button>
+          <button type="submit" class="px-4 py-2 text-xs font-bold bg-amber-400 text-slate-900 hover:bg-amber-500 rounded-lg shadow">Lưu Mật Khẩu</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="processModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+      <div class="tgdd-bg p-4 border-b border-amber-300 flex justify-between items-center">
+        <h3 id="modalTitle" class="font-bold text-slate-900 flex items-center gap-2"><i data-lucide="file-plus" class="w-5 h-5"></i> <span>Thêm Quy Trình Mới</span></h3>
+        <button onclick="closeModal()" class="text-slate-800 hover:text-black p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <form id="processForm" onsubmit="saveProcess(event)" class="p-6 overflow-y-auto space-y-4 flex-1">
+        <input type="hidden" id="processId">
+        <div><label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tiêu đề quy trình *</label><input type="text" id="formTitle" required class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:outline-none"></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Danh mục *</label>
+            <select id="formCategory" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:outline-none">
+              <option value="Bán hàng">Bán hàng & Siêu thị</option>
+              <option value="Nhân sự">Nhân sự & Tuyển dụng</option>
+              <option value="Vận hành">Vận hành & Kho bãi</option>
+              <option value="Kỹ thuật">Kỹ thuật & CNTT</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-bold text-slate-700 uppercase mb-1">Bộ phận phụ trách</label><input type="text" id="formOwner" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:outline-none"></div>
+        </div>
+        <div><label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mô tả quy trình</label><textarea id="formDescription" rows="2" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:outline-none"></textarea></div>
+        <div>
+          <div class="flex justify-between items-center mb-2">
+            <label class="block text-xs font-bold text-slate-700 uppercase">Các bước thực hiện</label>
+            <button type="button" onclick="addStepField()" class="text-xs font-bold text-amber-700 flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Thêm bước</button>
+          </div>
+          <div id="stepsContainer" class="space-y-3"></div>
+        </div>
+        <div class="pt-4 border-t border-slate-200 flex justify-end space-x-3">
+          <button type="button" onclick="closeModal()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg">Hủy</button>
+          <button type="submit" class="px-5 py-2 text-xs font-bold bg-amber-400 text-slate-900 hover:bg-amber-500 rounded-lg shadow">Lưu Quy Trình</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // ĐÃ THAY CẤU HÌNH FIREBASE CỦA BẠN VÀO ĐÂY
+    const firebaseConfig = {
+      apiKey: "AIzaSyAEtKo9NAV9Ny3GwqWHttQ3CdOUd5x1LwE",
+      authDomain: "tkth-process.firebaseapp.com",
+      databaseURL: "https://tkth-process-default-rtdb.firebaseio.com",
+      projectId: "tkth-process",
+      storageBucket: "tkth-process.firebasestorage.app",
+      messagingSenderId: "988289981775",
+      appId: "1:988289981775:web:dcbbd7cb7f5b22f393b93a",
+      measurementId: "G-HJ4CS7CS38"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const processesRef = db.ref('processes');
+
+    const DEFAULT_PASS = "311426";
+    let adminPassword = localStorage.getItem('tgdd_admin_pass') || DEFAULT_PASS;
+    let isAdmin = false;
+
+    const colorBlocks = [
+      { bg: 'bg-blue-600', badge: 'bg-blue-800 text-blue-100', text: 'text-white', subtext: 'text-blue-100' },
+      { bg: 'bg-amber-500', badge: 'bg-amber-700 text-amber-100', text: 'text-slate-950', subtext: 'text-slate-900' },
+      { bg: 'bg-emerald-600', badge: 'bg-emerald-800 text-emerald-100', text: 'text-white', subtext: 'text-emerald-100' },
+      { bg: 'bg-indigo-600', badge: 'bg-indigo-800 text-indigo-100', text: 'text-white', subtext: 'text-indigo-100' },
+      { bg: 'bg-rose-600', badge: 'bg-rose-800 text-rose-100', text: 'text-white', subtext: 'text-rose-100' }
+    ];
+
+    const iconList = ['user-check', 'search', 'cpu', 'file-check', 'user-plus', 'briefcase', 'book-open', 'award', 'settings', 'check-circle'];
+
+    const defaultData = [
+      {
+        id: "proc-1",
+        title: "Quy trình Đổi Trả Sản Phẩm Lỗi Tại Siêu Thị",
+        category: "Bán hàng",
+        owner: "Bộ Phận Triển Khai Tổng Hợp",
+        description: "Tiếp nhận và xử lý yêu cầu đổi trả thiết bị điện thoại/laptop bị lỗi phần cứng trong 30 ngày.",
+        steps: [
+          { title: "Tiếp nhận máy & Hóa đơn", desc: "Kiểm tra hóa đơn mua hàng, IMEI máy và thời hạn 30 ngày đổi trả quy định.", icon: "user-check" },
+          { title: "Kiểm tra ngoại quan", desc: "Xác nhận máy không trầy xước nặng, không vào nước, đầy đủ phụ kiện đi kèm.", icon: "search" },
+          { title: "Kiểm định lỗi kỹ thuật", desc: "Kỹ thuật viên kiểm tra lỗi phần cứng theo phản ánh của khách hàng.", icon: "cpu" },
+          { title: "Xác nhận & Khởi tạo phiếu đổi", desc: "Xuất phiếu đổi sản phẩm mới cùng loại hoặc hoàn tiền cho khách.", icon: "file-check" }
+        ]
+      }
+    ];
+
+    let processes = [];
+    let currentProcessId = null;
+    let currentViewMode = 'infographic';
+
+    processesRef.on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        processes = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+      } else {
+        processes = defaultData;
+        defaultData.forEach(item => db.ref('processes/' + item.id).set(item));
+      }
+
+      if (!currentProcessId && processes.length > 0) currentProcessId = processes[0].id;
+      renderSidebar();
+      if (currentProcessId) renderContent(currentProcessId);
+    });
+
+    function handleAuthAction() {
+      if (isAdmin) {
+        isAdmin = false;
+        updateRoleUI();
+        if(currentProcessId) renderContent(currentProcessId);
+      } else {
+        document.getElementById('loginModal').classList.remove('hidden');
+        document.getElementById('loginPassword').value = '';
+        document.getElementById('loginError').classList.add('hidden');
+      }
+    }
+
+    function closeLoginModal() { document.getElementById('loginModal').classList.add('hidden'); }
+
+    function submitLogin(e) {
+      e.preventDefault();
+      if (document.getElementById('loginPassword').value === adminPassword) {
+        isAdmin = true;
+        closeLoginModal();
+        updateRoleUI();
+        if(currentProcessId) renderContent(currentProcessId);
+      } else {
+        document.getElementById('loginError').classList.remove('hidden');
+      }
+    }
+
+    function openChangePasswordModal() {
+      if (!isAdmin) return;
+      document.getElementById('changePasswordModal').classList.remove('hidden');
+      document.getElementById('currentPass').value = '';
+      document.getElementById('newPass').value = '';
+      document.getElementById('confirmPass').value = '';
+      document.getElementById('changePassError').classList.add('hidden');
+    }
+
+    function closeChangePasswordModal() { document.getElementById('changePasswordModal').classList.add('hidden'); }
+
+    function submitChangePassword(e) {
+      e.preventDefault();
+      const curr = document.getElementById('currentPass').value;
+      const next = document.getElementById('newPass').value;
+      const confirm = document.getElementById('confirmPass').value;
+      const errEl = document.getElementById('changePassError');
+
+      if (curr !== adminPassword) {
+        errEl.textContent = 'Mật khẩu hiện tại không đúng!';
+        errEl.classList.remove('hidden');
+        return;
+      }
+      if (next.length < 4) {
+        errEl.textContent = 'Mật khẩu mới phải từ 4 ký tự!';
+        errEl.classList.remove('hidden');
+        return;
+      }
+      if (next !== confirm) {
+        errEl.textContent = 'Mật khẩu xác nhận không trùng!';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      adminPassword = next;
+      localStorage.setItem('tgdd_admin_pass', adminPassword);
+      alert('Đã đổi mật khẩu thành công!');
+      closeChangePasswordModal();
+    }
+
+    function updateRoleUI() {
+      const addBtn = document.getElementById('addProcessBtn');
+      const changePassBtn = document.getElementById('changePasswordBtn');
+      const authLabel = document.getElementById('authLabel');
+
+      if (isAdmin) {
+        addBtn.classList.remove('hidden'); addBtn.classList.add('flex');
+        changePassBtn.classList.remove('hidden'); changePassBtn.classList.add('flex');
+        authLabel.textContent = "Đăng xuất Admin";
+      } else {
+        addBtn.classList.add('hidden'); addBtn.classList.remove('flex');
+        changePassBtn.classList.add('hidden'); changePassBtn.classList.remove('flex');
+        authLabel.textContent = "Đăng nhập Admin";
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      updateRoleUI();
+      lucide.createIcons();
+    });
+
+    function renderSidebar(filtered = null) {
+      const list = filtered || processes;
+      const nav = document.getElementById('processList');
+      document.getElementById('processCount').textContent = list.length;
+
+      if(list.length === 0) {
+        nav.innerHTML = `<div class="text-center py-8 text-xs text-slate-500">Không có dữ liệu</div>`;
+        return;
+      }
+
+      nav.innerHTML = list.map(item => `
+        <button onclick="selectProcess('${item.id}')" class="w-full text-left p-2.5 rounded-lg text-xs font-medium transition-all flex items-start gap-2.5 ${item.id === currentProcessId ? 'bg-amber-400 text-slate-950 font-black' : 'text-slate-300 hover:bg-slate-800'}">
+          <i data-lucide="file-text" class="w-4 h-4 mt-0.5 ${item.id === currentProcessId ? 'text-slate-950' : 'text-amber-400'} shrink-0"></i>
+          <div class="flex-1 truncate">
+            <div class="truncate font-bold">${item.title}</div>
+            <div class="text-[10px] opacity-75 flex items-center gap-1 mt-0.5"><span>${item.category}</span></div>
+          </div>
+        </button>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function selectProcess(id) {
+      currentProcessId = id;
+      renderSidebar();
+      renderContent(id);
+    }
+
+    function renderContent(id) {
+      const proc = processes.find(p => p.id === id);
+      const container = document.getElementById('contentArea');
+
+      if (!proc) {
+        container.innerHTML = `<div class="text-center py-12 text-slate-400">Vui lòng chọn quy trình</div>`;
+        return;
+      }
+
+      const adminActionsHTML = isAdmin ? `
+        <button onclick="editProcess('${proc.id}')" title="Sửa quy trình" class="p-1.5 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+        <button onclick="deleteProcess('${proc.id}')" title="Xóa quy trình" class="p-1.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+      ` : '';
+
+      container.innerHTML = `
+        <div class="border-b border-slate-200 pb-5 mb-6">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-2">
+            <span class="inline-block px-2.5 py-1 text-xs font-bold bg-amber-100 text-amber-800 rounded-md uppercase tracking-wider">${proc.category}</span>
+            <div class="flex items-center space-x-2">
+              <div class="bg-slate-100 p-0.5 rounded-lg flex text-xs font-medium border border-slate-200">
+                <button onclick="setViewMode('infographic')" class="px-3 py-1 rounded-md transition-all ${currentViewMode === 'infographic' ? 'bg-white shadow text-slate-900 font-bold' : 'text-slate-500'}">Infographic</button>
+                <button onclick="setViewMode('standard')" class="px-3 py-1 rounded-md transition-all ${currentViewMode === 'standard' ? 'bg-white shadow text-slate-900 font-bold' : 'text-slate-500'}">Văn bản</button>
+              </div>
+              ${adminActionsHTML}
+            </div>
+          </div>
+          <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">${proc.title}</h1>
+          ${proc.owner ? `<p class="text-xs text-slate-500 mt-1 flex items-center gap-1"><i data-lucide="users" class="w-3.5 h-3.5"></i> Phụ trách: <strong>${proc.owner}</strong></p>` : ''}
+          ${proc.description ? `<p class="text-xs sm:text-sm text-slate-600 mt-3 bg-slate-50 p-3 rounded-lg border border-slate-100">${proc.description}</p>` : ''}
+        </div>
+        <div>${currentViewMode === 'infographic' ? renderInfographicView(proc.steps) : renderStandardView(proc.steps)}</div>
+      `;
+      lucide.createIcons();
+    }
+
+    function setViewMode(mode) {
+      currentViewMode = mode;
+      renderContent(currentProcessId);
+    }
+
+    function renderInfographicView(steps) {
+      if(!steps || steps.length === 0) return `<p class="text-slate-400 text-xs">Chưa có các bước trong quy trình này.</p>`;
+
+      return `
+        <div class="max-w-3xl mx-auto space-y-4 py-2">
+          ${steps.map((step, idx) => {
+            const block = colorBlocks[idx % colorBlocks.length];
+            return `
+              <div class="relative">
+                <div class="${block.bg} ${block.text} rounded-2xl p-5 shadow-md flex flex-col sm:flex-row items-start sm:items-center gap-4 transition-transform hover:-translate-y-0.5">
+                  <div class="flex items-center gap-3 shrink-0">
+                    <span class="${block.badge} font-black text-xs px-3 py-1.5 rounded-xl uppercase tracking-wider shadow-inner">Bước ${idx + 1}</span>
+                    <div class="w-12 h-12 rounded-xl bg-black/15 flex items-center justify-center shrink-0">
+                      <i data-lucide="${step.icon || 'check-circle'}" class="w-6 h-6"></i>
+                    </div>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <h3 class="font-bold text-base sm:text-lg leading-snug">${step.title}</h3>
+                    <p class="text-xs sm:text-sm ${block.subtext} mt-1 leading-relaxed opacity-95">${step.desc || 'Chưa có mô tả'}</p>
+                  </div>
+                </div>
+                ${idx < steps.length - 1 ? `
+                  <div class="flex justify-center my-1.5">
+                    <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center shadow-sm"><i data-lucide="arrow-down" class="w-4 h-4"></i></div>
+                  </div>
+                ` : ''}
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    function renderStandardView(steps) {
+      if(!steps || steps.length === 0) return `<p class="text-slate-400 text-xs">Chưa có nội dung.</p>`;
+      return `
+        <ol class="list-decimal list-inside space-y-4 text-xs sm:text-sm text-slate-700">
+          ${steps.map(s => `
+            <li class="pl-2"><strong class="text-slate-900">${s.title}:</strong><span class="text-slate-600 ml-1">${s.desc}</span></li>
+          `).join('')}
+        </ol>
+      `;
+    }
+
+    function handleSearch() {
+      const q = document.getElementById('searchInput').value.toLowerCase().trim();
+      const cat = document.getElementById('categoryFilter').value;
+      const filtered = processes.filter(p => {
+        const matchesCat = cat === 'ALL' || p.category === cat;
+        const matchesQuery = p.title.toLowerCase().includes(q) || 
+                             p.description.toLowerCase().includes(q) ||
+                             (p.steps && p.steps.some(s => s.title.toLowerCase().includes(q) || s.desc.toLowerCase().includes(q)));
+        return matchesCat && matchesQuery;
+      });
+      renderSidebar(filtered);
+    }
+
+    function filterCategory() { handleSearch(); }
+
+    function openModal(editId = null) {
+      if(!isAdmin) return;
+      document.getElementById('processModal').classList.remove('hidden');
+      document.getElementById('stepsContainer').innerHTML = '';
+
+      if (editId) {
+        const p = processes.find(item => item.id === editId);
+        document.getElementById('modalTitle').innerText = 'Chỉnh Sửa Quy Trình';
+        document.getElementById('processId').value = p.id;
+        document.getElementById('formTitle').value = p.title;
+        document.getElementById('formCategory').value = p.category;
+        document.getElementById('formOwner').value = p.owner || '';
+        document.getElementById('formDescription').value = p.description || '';
+        (p.steps || []).forEach(s => addStepField(s.title, s.desc, s.icon));
+      } else {
+        document.getElementById('modalTitle').innerText = 'Thêm Quy Trình Mới';
+        document.getElementById('processForm').reset();
+        document.getElementById('processId').value = '';
+        addStepField();
+      }
+      lucide.createIcons();
+    }
+
+    function closeModal() { document.getElementById('processModal').classList.add('hidden'); }
+
+    function addStepField(title = '', desc = '', icon = 'check-circle') {
+      const container = document.getElementById('stepsContainer');
+      const div = document.createElement('div');
+      div.className = 'flex gap-2 items-start bg-slate-50 p-2.5 rounded-lg border border-slate-200 step-item';
+      div.innerHTML = `
+        <div class="flex-1 space-y-1.5">
+          <div class="flex gap-2">
+            <input type="text" placeholder="Tên bước..." value="${title}" class="step-title flex-1 text-xs font-bold p-1.5 border border-slate-300 rounded focus:outline-none">
+            <select class="step-icon text-xs p-1.5 border border-slate-300 rounded bg-white">
+              ${iconList.map(i => `<option value="${i}" ${i === icon ? 'selected' : ''}>Icon: ${i}</option>`).join('')}
+            </select>
+          </div>
+          <textarea placeholder="Mô tả công việc chi tiết..." rows="2" class="step-desc w-full text-xs p-1.5 border border-slate-300 rounded focus:outline-none">${desc}</textarea>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" class="text-slate-400 hover:text-red-500 p-1"><i data-lucide="trash" class="w-4 h-4"></i></button>
+      `;
+      container.appendChild(div);
+      lucide.createIcons();
+    }
+
+    function saveProcess(e) {
+      e.preventDefault();
+      if(!isAdmin) return;
+
+      const id = document.getElementById('processId').value || 'proc-' + Date.now();
+      const title = document.getElementById('formTitle').value;
+      const category = document.getElementById('formCategory').value;
+      const owner = document.getElementById('formOwner').value;
+      const description = document.getElementById('formDescription').value;
+
+      const stepElements = document.querySelectorAll('.step-item');
+      const steps = Array.from(stepElements).map(el => ({
+        title: el.querySelector('.step-title').value || 'Bước thực hiện',
+        desc: el.querySelector('.step-desc').value || '',
+        icon: el.querySelector('.step-icon').value || 'check-circle'
+      }));
+
+      const processData = { title, category, owner, description, steps };
+
+      db.ref('processes/' + id).set(processData)
+        .then(() => {
+          closeModal();
+          currentProcessId = id;
+        })
+        .catch((err) => alert("Lỗi khi lưu dữ liệu: " + err.message));
+    }
+
+    function editProcess(id) { openModal(id); }
+
+    function deleteProcess(id) {
+      if(!isAdmin) return;
+      if (confirm('Bạn có chắc chắn muốn xóa quy trình này?')) {
+        db.ref('processes/' + id).remove()
+          .then(() => {
+            if (currentProcessId === id) currentProcessId = null;
+          })
+          .catch((err) => alert("Lỗi khi xóa: " + err.message));
+      }
+    }
+  </script>
+</body>
+</html>
